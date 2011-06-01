@@ -101,6 +101,16 @@ class frontendMainDicts(cvWDictFile.frontendMainDicts):
             mfobj.load()
             self.monitor_htmls.append(mfobj)
 
+        spd = self.params.data
+        useMonitorIndexPage = True
+        if spd.has_key('frontend_monitor_index_page'):
+            useMonitorIndexPage = spd['frontend_monitor_index_page'] in ('True', 'true', '1')
+            
+            if useMonitorIndexPage:
+                mfobj = cWDictFile.SimpleFile(params.work.src_dir + '/frontend', 'index.html')
+                mfobj.load()
+                self.monitor_htmls.append(mfobj)
+
         # populate security data
         populate_main_security(self.client_security,params)
 
