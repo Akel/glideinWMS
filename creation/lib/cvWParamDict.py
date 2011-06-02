@@ -111,6 +111,14 @@ class frontendMainDicts(cvWDictFile.frontendMainDicts):
                 mfobj.load()
                 self.monitor_htmls.append(mfobj)
 
+                for imgfil in ('frontendGroupGraphsNow.small.png',
+                               'frontendRRDBrowse.small.png',
+                               'frontendRRDGroupMatix.small.png',
+                               'frontendStatus.small.png'):
+                    mfobj = cWDictFile.SimpleFile(params.work.src_dir + '/frontend/images', imgfil)
+                    mfobj.load()
+                    self.monitor_htmls.append(mfobj)
+
         # populate security data
         populate_main_security(self.client_security,params)
 
