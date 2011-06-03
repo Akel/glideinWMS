@@ -107,7 +107,7 @@ class frontendMainDicts(cvWDictFile.frontendMainDicts):
             useMonitorIndexPage = spd['frontend_monitor_index_page'] in ('True', 'true', '1')
             
             if useMonitorIndexPage:
-                mfobj = cWDictFile.SimpleFile(params.work.src_dir + '/frontend', 'index.html')
+                mfobj = cWDictFile.SimpleFile(params.src_dir + '/frontend', 'index.html')
                 mfobj.load()
                 self.monitor_htmls.append(mfobj)
 
@@ -115,7 +115,7 @@ class frontendMainDicts(cvWDictFile.frontendMainDicts):
                                'frontendRRDBrowse.small.png',
                                'frontendRRDGroupMatix.small.png',
                                'frontendStatus.small.png'):
-                    mfobj = cWDictFile.SimpleFile(params.work.src_dir + '/frontend/images', imgfil)
+                    mfobj = cWDictFile.SimpleFile(params.src_dir + '/frontend/images', imgfil)
                     mfobj.load()
                     self.monitor_htmls.append(mfobj)
 
