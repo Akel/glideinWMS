@@ -3,7 +3,7 @@
 #   glideinWMS
 #
 # File Version: 
-#   $Id: glideinFrontendInterface.py,v 1.47.2.10 2011/01/26 19:25:24 parag Exp $
+#   $Id: glideinFrontendInterface.py,v 1.47.2.10.6.1 2011/06/10 22:02:48 parag Exp $
 #
 # Description:
 #   This module implements the functions needed to advertize
@@ -656,15 +656,213 @@ def deadvertizeAllWork(factory_pool,
     finally:
         os.remove(tmpnam)
 
+
+###############################################################################
+# Code to advertise resource classads to the User Pool
+###############################################################################
+
+class Classad:
+    """
+    Base class describing a classad.
+    """
+    
+    def __init__(self, type, advertiseCmd, invalidateCmd):
+        """
+        Constructor
+        """
+        
+        global frontendConfig
+
+        self.adAdvertiseCmd = advertiseCmd
+        self.adInvalidateCmd = invalidateCmd
+        self.adType = type
+        
+        self.adParams = {}
+        self.adParams['MyType'] = self.adType
+        self.adParams['GlideinMyType'] = self.adType
+        self.adParams['GlideinWMSVersion'] = frontendConfig.glideinwms_version
+
+    def __str__(self):
+        """
+        String representation of the classad.
+        """
+        
+        ad = ""
+        for param in self.adParams.keys():
+            if isinstance(self.adParams[param], str):
+                ad += '%s = "%s"\n' % (param, self.adParams[param])
+            elif isinstance(self.adParams[param], unicode):
+                ad += '%s = "%s"\n' % (param, self.adParams[param])
+            else:
+                ad += '%s = %s\n' % (param, self.adParams[param])  
+        return ad
+
+class ResourceClassad(Classad):
+    """
+    This class describes the resource classad. Frontend advertises the 
+    resource classad to the user pool as an UPDATE_AD_GENERIC type classad 
+    """
+    
+    def __init__(self, factory_ref, frontend_ref):
+        """
+        Class Constructor
+        """
+
+        Classad.__init__(self, 'glideresource', 'UPDATE_AD_GENERIC',
+                         'INVALIDATE_ADS_GENERIC')
+        
+        self.adParams['GlideFactoryName'] = "%s" % factory_ref
+        self.adParams['GlideClientName'] = "%s" % frontend_ref
+        self.adParams['Name'] = "%s@%s" % (factory_ref, frontend_ref)
+        self.adParams['GLIDEIN_In_Downtime'] = 'False'
+        
+
+class ResourceClassadAdvertiser:
+    """
+    Class to handle the advertisement of resource classads to the user pool
+    """
+
+
+    def __init__(self, pool=None, multi_support=False):
+        """
+        Constructor
+        """
+        
+        # Dictionary of classad objects
+        self.classads = {}
+        self.pool = pool
+        self.multiAdvertiseSupport = multi_support
+        self.adType = 'glideresource'
+        self.adInvalidateCmd = 'INVALIDATE_ADS_GENERIC'
+
+
+    def addClassad(self, name, ad_obj):
+        self.classads[name] = ad_obj
+    
+
+    def classadToFile(self, ad):
+        """
+        Write classad to the file and return the filename
+        """
+        
+        # get a 9 digit number that will stay 9 digit for next 25 years
+        short_time = time.time() - 1.05e9
+        fname = "/tmp/gfi_ar_%li_%li" % (short_time, os.getpid())
+        
+        try:
+            fd = file(fname, "w")
+        except:
+            return ""
+        
+        try:
+            fd.write("%s" % self.classads[ad])
+        finally:
+            fd.close()
+        
+        return fname
+
+
+    def advertiseClassad(self, ad):
+        """
+        Advertise the classad to the pool
+        """
+
+        fname = self.classadToFile(ad)
+        if fname != "":
+            try:
+                exe_condor_advertise(fname, self.classads[ad].adAdvertiseCmd,
+                                     self.pool,
+                                     is_multi=self.multiAdvertiseSupport)
+            finally:
+                os.remove(fname)
+        else:
+            # TODO: Log error/warning that classad file was not generated
+            pass
+    
+    
+    def advertiseAllClassads(self):
+        """
+        Advertise all the known classads to the pool
+        """
+        
+        for ad in self.classads.keys():
+            self.advertiseClassad(ad)
+    
+    
+    def invalidateClassad(self, ad):
+        """
+        Invalidate my classad from the pool
+        """
+
+        global frontendConfig
+    
+        # get a 9 digit number that will stay 9 digit for next 25 years
+        short_time = time.time() - 1.05e9
+        tmpnam = "/tmp/gfi_ar_%li_%li" % (short_time, os.getpid())
+        fd = file(tmpnam,"w")
+        try:
+            try:
+                fd.write('MyType = "Query"\n')
+                fd.write('TargetType = "%s"\n' % self.classads[ad].adType)
+                fd.write('Requirements = Name == "%s"\n' % ad)
+            finally:
+                fd.close()
+    
+            exe_condor_advertise(tmpnam, self.classads[ad].adInvalidateCmd, 
+                                 self.pool,
+                                 is_multi=self.multiAdvertiseSupport)
+        finally:
+            os.remove(tmpnam)
+
+    
+    def invalidateAllClassads(self):
+        """
+        Invalidate all the known classads
+        """
+
+        for ad in self.classads.keys():
+            self.invalidateClassad(ad)
+
+    def invalidateConstrainedClassads(self, constraint):
+        """
+        Invalidate my classad from the pool matching the given constraint
+        """
+
+        global frontendConfig
+    
+        # get a 9 digit number that will stay 9 digit for next 25 years
+        short_time = time.time() - 1.05e9
+        tmpnam = "/tmp/gfi_ar_%li_%li" % (short_time, os.getpid())
+        fd = file(tmpnam,"w")
+        try:
+            try:
+                fd.write('MyType = "Query"\n')
+                fd.write('TargetType = "%s"\n' % self.adType)
+                fd.write('Requirements = %s' % constraint)
+            finally:
+                fd.close()
+    
+            exe_condor_advertise(tmpnam, self.adInvalidateCmd, 
+                                 self.pool,
+                                 is_multi=self.multiAdvertiseSupport)
+        finally:
+            os.remove(tmpnam)
+
+        
+    def getAllClassads(self):
+        ads = ""
+        
+        for ad in self.classads.keys():
+            ads = "%s%s" % (ads, self.classads[ad]) 
+        return ads
+
 ############################################################
 #
 # I N T E R N A L - Do not use
 #
 ############################################################
 
-def exe_condor_advertise(fname,command,
-                         factory_pool,
-                         is_multi=False):
-    return condorManager.condorAdvertise(fname,command,frontendConfig.advertise_use_tcp,is_multi,factory_pool)
-
-    
+def exe_condor_advertise(fname,command, pool, is_multi=False):
+    return condorManager.condorAdvertise(fname, command, 
+                                         frontendConfig.advertise_use_tcp,
+                                         is_multi, pool)
