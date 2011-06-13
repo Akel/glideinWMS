@@ -4,7 +4,7 @@
 #   glideinWMS
 #
 # File Version: 
-#   $Id: glideinFrontendElement.py,v 1.52.2.26.2.1 2011/06/10 22:02:49 parag Exp $
+#   $Id: glideinFrontendElement.py,v 1.52.2.26.2.2 2011/06/13 21:21:37 parag Exp $
 #
 # Description:
 #   This is the main of the glideinFrontend
@@ -636,22 +636,41 @@ def iterate_one(client_name,elementDescript,paramsDescript,signatureDescript,x50
                        remove_excess_str=remove_excess_str,
                        key_obj=key_obj,glidein_params_to_encrypt=None,security_name=security_name)
 
-        glideinFrontendLib.log_files.logActivity("=================")        
-        glideinFrontendLib.log_files.logActivity("factory_pool_node=%s" % factory_pool_node)
-        glideinFrontendLib.log_files.logActivity("=================")        
-        glideinFrontendLib.log_files.logActivity("request_name=%s" % request_name)
-        glideinFrontendLib.log_files.logActivity("=================")        
-        glideinFrontendLib.log_files.logActivity("my_identity=%s" % my_identity)
-        glideinFrontendLib.log_files.logActivity("=================")        
-        glideinFrontendLib.log_files.logActivity("glideid_str=%s" % glideid_str)
-        glideinFrontendLib.log_files.logActivity("=================")        
-        glideinFrontendLib.log_files.logActivity("client_name=%s" % client_name)
-        glideinFrontendLib.log_files.logActivity("=================")        
-        glideinFrontendLib.log_files.logActivity("glidein_in_downtime=%s" % glidein_in_downtime)
+        #glideinFrontendLib.log_files.logActivity("=================")        
+        #glideinFrontendLib.log_files.logActivity("factory_pool_node=%s" % factory_pool_node)
+        #glideinFrontendLib.log_files.logActivity("=================")        
+        #glideinFrontendLib.log_files.logActivity("request_name=%s" % request_name)
+        #glideinFrontendLib.log_files.logActivity("=================")        
+        #glideinFrontendLib.log_files.logActivity("my_identity=%s" % my_identity)
+        #glideinFrontendLib.log_files.logActivity("=================")        
+        #glideinFrontendLib.log_files.logActivity("glideid_str=%s" % glideid_str)
+        #glideinFrontendLib.log_files.logActivity("=================")        
+        #glideinFrontendLib.log_files.logActivity("client_name=%s" % client_name)
+        #glideinFrontendLib.log_files.logActivity("=================")        
+        #glideinFrontendLib.log_files.logActivity("glidein_in_downtime=%s" % glidein_in_downtime)
+        #glideinFrontendLib.log_files.logActivity("=================")        
+        #glideinFrontendLib.log_files.logActivity("glidein_params=%s" % glidein_params)
+        #glideinFrontendLib.log_files.logActivity("=================")        
+        #glideinFrontendLib.log_files.logActivity("glidein_monitors=%s" % glidein_monitors)
+        #glideinFrontendLib.log_files.logActivity("=================")        
+        #glideinFrontendLib.log_files.logActivity("total_up_stats_arr=%s" % total_up_stats_arr)
+        #glideinFrontendLib.log_files.logActivity("=================")        
+        #glideinFrontendLib.log_files.logActivity("total_down_stats_arr=%s" % total_down_stats_arr)
+        #glideinFrontendLib.log_files.logActivity("=================")        
+        #glideinFrontendLib.log_files.logActivity("glidein_el=%s" % glidein_el)
+        #glideinFrontendLib.log_files.logActivity("=================")        
+        #glideinFrontendLib.log_files.logActivity("total_down_stats_arr=%s" % total_down_stats_arr)
+        
+        # Create the resource classad and populate the required information
         resource_classad = glideinFrontendInterface.ResourceClassad(request_name, client_name)
+        resource_classad.setInDownTime(glidein_in_downtime)
+        resource_classad.setEntryInfo(glidein_el['attrs'])
+        resource_classad.setGlideFactoryMonitorInfo(glidein_el['monitor'])
+        if glidein_in_downtime:
+            resource_classad.setGlideClientMonitorInfo(total_down_stats_arr)
+        else:
+            resource_classad.setGlideClientMonitorInfo(total_up_stats_arr)
         resource_advertiser.addClassad(resource_classad.adParams['Name'], resource_classad)
-         
-
 
     # end for glideid in condorq_dict_types['Idle']['count'].keys()
 

@@ -3,7 +3,7 @@
 #   glideinWMS
 #
 # File Version: 
-#   $Id: glideinFrontendInterface.py,v 1.47.2.10.6.1 2011/06/10 22:02:48 parag Exp $
+#   $Id: glideinFrontendInterface.py,v 1.47.2.10.6.2 2011/06/13 21:21:37 parag Exp $
 #
 # Description:
 #   This module implements the functions needed to advertize
@@ -715,8 +715,67 @@ class ResourceClassad(Classad):
         self.adParams['GlideClientName'] = "%s" % frontend_ref
         self.adParams['Name'] = "%s@%s" % (factory_ref, frontend_ref)
         self.adParams['GLIDEIN_In_Downtime'] = 'False'
-        
+       
+    def setInDownTime(self, downtime):
+        """
+        Set the downtime flag for the resource in the classad
+        """
+        self.adParams['GLIDEIN_In_Downtime'] = downtime
 
+
+    def setGlideClientMonitorInfo(self, monitorInfo):
+        """
+        Set the GlideClientMonitor* for the resource in the classad
+        """
+        if len(monitorInfo) == 13:
+            self.adParams['GlideClientMonitorJobsIdle'] = monitorInfo[0]
+            self.adParams['GlideClientMonitorJobsIdleMatching'] = monitorInfo[1]
+            self.adParams['GlideClientMonitorJobsIdleEffective'] = monitorInfo[2]
+            self.adParams['GlideClientMonitorJobsIdleOld'] = monitorInfo[3]
+            self.adParams['GlideClientMonitorJobsIdleUnique'] = monitorInfo[4]
+            self.adParams['GlideClientMonitorJobsRunning'] = monitorInfo[5]
+            self.adParams['GlideClientMonitorJobsRunningHere'] = monitorInfo[6]
+            self.adParams['GlideClientMonitorJobsRunningMax'] = monitorInfo[7]
+            self.adParams['GlideClientMonitorGlideinsTotal'] = monitorInfo[8]
+            self.adParams['GlideClientMonitorGlideinsIdle'] = monitorInfo[9]
+            self.adParams['GlideClientMonitorGlideinsRunning'] = monitorInfo[10]
+            self.adParams['GlideClientMonitorGlideinsRequestIdle'] = monitorInfo[11]
+            self.adParams['GlideClientMonitorGlideinsRequestMaxRun'] = monitorInfo[12]
+        else:
+            # TODO: Throw exception or log the error
+            pass
+    
+
+    def setEntryInfo(self, info):
+        """
+        Set the useful entry specific info for the resource in the classad
+        """
+        attrs = [
+                 'GLIDEIN_Site', 'GLIDEIN_Gatekeeper', 'GLIDEIN_GridType',
+                 'GLIDEIN_GlobusRSL', 'GLEXEC_BIN', 'GLEXEC_JOB',
+                ]
+        
+        for attr in attrs:
+            if info.has_key(attr):
+                self.adParams[attr] = info[attr]
+
+    
+    def setGlideFactoryMonitorInfo(self, info):
+        """
+        Set the GlideinFactoryMonitor* for the resource in the classad
+        """
+        
+        # Required keys do not start with TotalClientMonitor but only
+        # start with Total. Substitute Total with GlideFactoryMonitor
+        # and put it in the classad
+        
+        for key in info.keys():
+            if not key.startswith('TotalClientMonitor'):
+                if key.startswith('Total'):
+                    ad_key = key.replace('Total', 'GlideFactoryMonitor', 1)
+                    self.adParams[ad_key] = info[key]
+    
+    
 class ResourceClassadAdvertiser:
     """
     Class to handle the advertisement of resource classads to the user pool
