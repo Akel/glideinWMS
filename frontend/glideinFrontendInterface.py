@@ -3,7 +3,7 @@
 #   glideinWMS
 #
 # File Version: 
-#   $Id: glideinFrontendInterface.py,v 1.47.2.10.6.2 2011/06/13 21:21:37 parag Exp $
+#   $Id: glideinFrontendInterface.py,v 1.47.2.10.6.3 2011/06/14 16:55:15 parag Exp $
 #
 # Description:
 #   This module implements the functions needed to advertize
@@ -697,10 +697,11 @@ class Classad:
                 ad += '%s = %s\n' % (param, self.adParams[param])  
         return ad
 
+
 class ResourceClassad(Classad):
     """
     This class describes the resource classad. Frontend advertises the 
-    resource classad to the user pool as an UPDATE_AD_GENERIC type classad 
+    resource classad to the user pool as an UPDATE_AD_GENERIC type classad
     """
     
     def __init__(self, factory_ref, frontend_ref):
@@ -720,12 +721,14 @@ class ResourceClassad(Classad):
         """
         Set the downtime flag for the resource in the classad
         """
-        self.adParams['GLIDEIN_In_Downtime'] = downtime
+        self.adParams['GLIDEIN_In_Downtime'] = str(downtime)
 
 
     def setGlideClientMonitorInfo(self, monitorInfo):
         """
         Set the GlideClientMonitor* for the resource in the classad
+        
+        
         """
         if len(monitorInfo) == 13:
             self.adParams['GlideClientMonitorJobsIdle'] = monitorInfo[0]
@@ -742,22 +745,26 @@ class ResourceClassad(Classad):
             self.adParams['GlideClientMonitorGlideinsRequestIdle'] = monitorInfo[11]
             self.adParams['GlideClientMonitorGlideinsRequestMaxRun'] = monitorInfo[12]
         else:
-            # TODO: Throw exception or log the error
-            pass
+            raise RuntimeError, 'Glide client monitoring structure changed. Resource ad may have incorrect GlideClientMonitor values'
     
 
     def setEntryInfo(self, info):
         """
         Set the useful entry specific info for the resource in the classad
         """
-        attrs = [
-                 'GLIDEIN_Site', 'GLIDEIN_Gatekeeper', 'GLIDEIN_GridType',
-                 'GLIDEIN_GlobusRSL', 'GLEXEC_BIN', 'GLEXEC_JOB',
-                ]
         
-        for attr in attrs:
-            if info.has_key(attr):
-                self.adParams[attr] = info[attr]
+        eliminate_attrs = set([
+                 'CurrentTime', 'USE_CCB', 'PubKeyValue', 'PubKeyType',
+                 'AuthenticatedIdentity', 'GlideinName', 'FactoryName', 
+                 'GlideinRequirex509_Proxy', 'GlideinAllowx509_Proxy',
+                 'EntryName', 'GlideinWMSVersion', 'PubKeyObj', 
+                 'LastHeardFrom', 'PubKeyID', 'SupportedSignTypes',
+                 'GLIDEIN_In_Downtime'
+                ])
+        available_attrs = set(info.keys())
+        publish_attrs = available_attrs - eliminate_attrs
+        for attr in publish_attrs:
+            self.adParams[attr] = info[attr]
 
     
     def setGlideFactoryMonitorInfo(self, info):

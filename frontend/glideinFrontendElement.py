@@ -4,7 +4,7 @@
 #   glideinWMS
 #
 # File Version: 
-#   $Id: glideinFrontendElement.py,v 1.52.2.26.2.2 2011/06/13 21:21:37 parag Exp $
+#   $Id: glideinFrontendElement.py,v 1.52.2.26.2.3 2011/06/14 16:55:15 parag Exp $
 #
 # Description:
 #   This is the main of the glideinFrontend
@@ -659,6 +659,8 @@ def iterate_one(client_name,elementDescript,paramsDescript,signatureDescript,x50
         #glideinFrontendLib.log_files.logActivity("=================")        
         #glideinFrontendLib.log_files.logActivity("glidein_el=%s" % glidein_el)
         #glideinFrontendLib.log_files.logActivity("=================")        
+        #glideinFrontendLib.log_files.logActivity("glidein_el[attr]=%s" % glidein_el['attrs'])
+        #glideinFrontendLib.log_files.logActivity("=================")        
         #glideinFrontendLib.log_files.logActivity("total_down_stats_arr=%s" % total_down_stats_arr)
         
         # Create the resource classad and populate the required information
@@ -666,10 +668,15 @@ def iterate_one(client_name,elementDescript,paramsDescript,signatureDescript,x50
         resource_classad.setInDownTime(glidein_in_downtime)
         resource_classad.setEntryInfo(glidein_el['attrs'])
         resource_classad.setGlideFactoryMonitorInfo(glidein_el['monitor'])
-        if glidein_in_downtime:
-            resource_classad.setGlideClientMonitorInfo(total_down_stats_arr)
-        else:
-            resource_classad.setGlideClientMonitorInfo(total_up_stats_arr)
+        try:
+            if glidein_in_downtime:
+                resource_classad.setGlideClientMonitorInfo(total_down_stats_arr)
+            else:
+                resource_classad.setGlideClientMonitorInfo(total_up_stats_arr)
+        except RuntimeError, e:
+            glideinFrontendLib.log_files.logWarning("Error populating GlideClientMonitor info in the resource classad. See debug log for more details.")
+            glideinFrontendLib.log_files.logDebug("Populating GlideClientMonitor info in resource classad failed: %s"%e)
+                    
         resource_advertiser.addClassad(resource_classad.adParams['Name'], resource_classad)
 
     # end for glideid in condorq_dict_types['Idle']['count'].keys()
