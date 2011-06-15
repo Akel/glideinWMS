@@ -3,7 +3,7 @@
 #   glideinWMS
 #
 # File Version: 
-#   $Id: glideinFrontendInterface.py,v 1.47.2.10.6.5 2011/06/15 16:28:50 parag Exp $
+#   $Id: glideinFrontendInterface.py,v 1.47.2.10.6.6 2011/06/15 19:00:44 parag Exp $
 #
 # Description:
 #   This module implements the functions needed to advertize
@@ -966,7 +966,6 @@ class ResourceClassadAdvertiser:
         
         @type type: string 
         @param type: Name of the classad
-
         """
 
         global frontendConfig
@@ -997,6 +996,7 @@ class ResourceClassadAdvertiser:
 
         for ad in self.classads.keys():
             self.invalidateClassad(ad)
+
 
     def invalidateConstrainedClassads(self, constraint):
         """
@@ -1032,8 +1032,9 @@ class ResourceClassadAdvertiser:
         Return all the known classads
         
         @rtype: string
-        @return: All the known classads 
+        @return: All the known classads delimited by empty line 
         """
+
         ads = ""
         
         for ad in self.classads.keys():
