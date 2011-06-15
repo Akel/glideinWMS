@@ -3,7 +3,7 @@
 #   glideinWMS
 #
 # File Version: 
-#   $Id: glideinFrontendInterface.py,v 1.47.2.10.6.3 2011/06/14 16:55:15 parag Exp $
+#   $Id: glideinFrontendInterface.py,v 1.47.2.10.6.4 2011/06/15 14:35:08 parag Exp $
 #
 # Description:
 #   This module implements the functions needed to advertize
@@ -669,13 +669,20 @@ class Classad:
     def __init__(self, type, advertiseCmd, invalidateCmd):
         """
         Constructor
+
+        @type type: string 
+        @param type: Type of the classad
+        @type advertiseCmd: string 
+        @param advertiseCmd: Condor update-command to advertise this classad 
+        @type invalidateCmd: string 
+        @param invalidateCmd: Condor update-command to invalidate this classad 
         """
         
         global frontendConfig
 
+        self.adType = type
         self.adAdvertiseCmd = advertiseCmd
         self.adInvalidateCmd = invalidateCmd
-        self.adType = type
         
         self.adParams = {}
         self.adParams['MyType'] = self.adType
@@ -707,6 +714,11 @@ class ResourceClassad(Classad):
     def __init__(self, factory_ref, frontend_ref):
         """
         Class Constructor
+
+        @type factory_ref: string 
+        @param factory_ref: Name of the resource in the glidefactory classad
+        @type frontend_ref: string 
+        @param type: Name of the resource in the glideclient classad
         """
 
         Classad.__init__(self, 'glideresource', 'UPDATE_AD_GENERIC',
@@ -719,7 +731,10 @@ class ResourceClassad(Classad):
        
     def setInDownTime(self, downtime):
         """
-        Set the downtime flag for the resource in the classad
+        Set the down time flag for the resource in the classad
+
+        @type type: bool
+        @param type: True if the entry is in down time.
         """
         self.adParams['GLIDEIN_In_Downtime'] = str(downtime)
 
@@ -728,7 +743,8 @@ class ResourceClassad(Classad):
         """
         Set the GlideClientMonitor* for the resource in the classad
         
-        
+        @type monitorInfo: list 
+        @param monitorInfo: GlideClientMonitor information.
         """
         if len(monitorInfo) == 13:
             self.adParams['GlideClientMonitorJobsIdle'] = monitorInfo[0]
@@ -751,6 +767,9 @@ class ResourceClassad(Classad):
     def setEntryInfo(self, info):
         """
         Set the useful entry specific info for the resource in the classad
+
+        @type info: dict 
+        @param info: Useful info from the glidefactory classad  
         """
         
         eliminate_attrs = set([
@@ -770,6 +789,9 @@ class ResourceClassad(Classad):
     def setGlideFactoryMonitorInfo(self, info):
         """
         Set the GlideinFactoryMonitor* for the resource in the classad
+
+        @type info: string 
+        @param info: Useful information from the glidefactoryclient classad
         """
         
         # Required keys do not start with TotalClientMonitor but only
@@ -792,6 +814,11 @@ class ResourceClassadAdvertiser:
     def __init__(self, pool=None, multi_support=False):
         """
         Constructor
+
+        @type pool: string 
+        @param pool: Collector address
+        @type multi_support: bool 
+        @param multi_support: True if the installation support advertising multiple classads with one condor_advertise command. Defaults to False.
         """
         
         # Dictionary of classad objects
@@ -803,12 +830,28 @@ class ResourceClassadAdvertiser:
 
 
     def addClassad(self, name, ad_obj):
+        """
+        Adds the classad to the classad dictionary
+        
+        @type name: string 
+        @param name: Name of the classad
+        @type type: ClassAd
+        @param type: Actual classad object
+
+        
+        """
         self.classads[name] = ad_obj
     
 
     def classadToFile(self, ad):
         """
         Write classad to the file and return the filename
+        
+        @type type: string 
+        @param type: Name of the classad
+        
+        @rtype: string
+        @return: Name of the file
         """
         
         # get a 9 digit number that will stay 9 digit for next 25 years
@@ -831,6 +874,9 @@ class ResourceClassadAdvertiser:
     def advertiseClassad(self, ad):
         """
         Advertise the classad to the pool
+        
+        @type type: string 
+        @param type: Name of the classad
         """
 
         fname = self.classadToFile(ad)
@@ -857,7 +903,11 @@ class ResourceClassadAdvertiser:
     
     def invalidateClassad(self, ad):
         """
-        Invalidate my classad from the pool
+        Invalidate the classad from the pool
+        
+        @type type: string 
+        @param type: Name of the classad
+
         """
 
         global frontendConfig
@@ -891,7 +941,10 @@ class ResourceClassadAdvertiser:
 
     def invalidateConstrainedClassads(self, constraint):
         """
-        Invalidate my classad from the pool matching the given constraint
+        Invalidate classads from the pool matching the given constraints
+        
+        @type type: string 
+        @param type: Condor constraints for filtering the classads
         """
 
         global frontendConfig
@@ -916,6 +969,12 @@ class ResourceClassadAdvertiser:
 
         
     def getAllClassads(self):
+        """
+        Return all the known classads
+        
+        @rtype: string
+        @return: All the known classads 
+        """
         ads = ""
         
         for ad in self.classads.keys():
