@@ -4,7 +4,7 @@
 #   glideinWMS
 #
 # File Version: 
-#   $Id: glideinFrontendElement.py,v 1.52.2.26.2.4 2011/06/15 16:28:50 parag Exp $
+#   $Id: glideinFrontendElement.py,v 1.52.2.26.2.5 2011/06/15 18:57:18 parag Exp $
 #
 # Description:
 #   This is the main of the glideinFrontend
@@ -643,10 +643,7 @@ def iterate_one(client_name,elementDescript,paramsDescript,signatureDescript,x50
         resource_classad.setEntryInfo(glidein_el['attrs'])
         resource_classad.setGlideFactoryMonitorInfo(glidein_el['monitor'])
         try:
-            if glidein_in_downtime:
-                resource_classad.setGlideClientMonitorInfo(total_down_stats_arr)
-            else:
-                resource_classad.setGlideClientMonitorInfo(total_up_stats_arr)
+            resource_classad.setGlideClientMonitorInfo(this_stats_arr)
         except RuntimeError, e:
             glideinFrontendLib.log_files.logWarning("Error populating GlideClientMonitor info in the resource classad. See debug log for more details.")
             glideinFrontendLib.log_files.logDebug("Populating GlideClientMonitor info in resource classad failed: %s"%e)
@@ -692,7 +689,7 @@ def iterate_one(client_name,elementDescript,paramsDescript,signatureDescript,x50
     # Advertise glideresource classads
     try:
         glideinFrontendLib.log_files.logActivity("Advertising %i glideresource classads to the user pool" %  len(resource_advertiser.classads))
-        glideinFrontendLib.log_files.logActivity("glideresource classads to advertise -\n%s" % resource_advertiser.getAllClassads())
+        #glideinFrontendLib.log_files.logActivity("glideresource classads to advertise -\n%s" % resource_advertiser.getAllClassads())
         resource_advertiser.advertiseAllClassads()
         glideinFrontendLib.log_files.logActivity("Done advertising glideresource classads")
     except RuntimeError, e:
