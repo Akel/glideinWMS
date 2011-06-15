@@ -3,7 +3,7 @@
 #   glideinWMS
 #
 # File Version: 
-#   $Id: glideinFrontendInterface.py,v 1.47.2.10.6.4 2011/06/15 14:35:08 parag Exp $
+#   $Id: glideinFrontendInterface.py,v 1.47.2.10.6.5 2011/06/15 16:28:50 parag Exp $
 #
 # Description:
 #   This module implements the functions needed to advertize
@@ -731,10 +731,10 @@ class ResourceClassad(Classad):
        
     def setInDownTime(self, downtime):
         """
-        Set the down time flag for the resource in the classad
+        Set the downtime flag for the resource in the classad
 
-        @type type: bool
-        @param type: True if the entry is in down time.
+        @type downtime: bool
+        @param downtime: True if the entry is in down time.
         """
         self.adParams['GLIDEIN_In_Downtime'] = str(downtime)
 
@@ -826,7 +826,9 @@ class ResourceClassadAdvertiser:
         self.pool = pool
         self.multiAdvertiseSupport = multi_support
         self.adType = 'glideresource'
+        self.adAdvertiseCmd = 'UPDATE_AD_GENERIC'
         self.adInvalidateCmd = 'INVALIDATE_ADS_GENERIC'
+        self.multiClassadDelimiter = '\n'
 
 
     def addClassad(self, name, ad_obj):
@@ -835,11 +837,10 @@ class ResourceClassadAdvertiser:
         
         @type name: string 
         @param name: Name of the classad
-        @type type: ClassAd
-        @param type: Actual classad object
-
-        
+        @type ad_obj: ClassAd
+        @param ad_obj: Actual classad object
         """
+
         self.classads[name] = ad_obj
     
 
@@ -847,8 +848,8 @@ class ResourceClassadAdvertiser:
         """
         Write classad to the file and return the filename
         
-        @type type: string 
-        @param type: Name of the classad
+        @type ad: string 
+        @param ad: Name of the classad
         
         @rtype: string
         @return: Name of the file
@@ -857,7 +858,6 @@ class ResourceClassadAdvertiser:
         # get a 9 digit number that will stay 9 digit for next 25 years
         short_time = time.time() - 1.05e9
         fname = "/tmp/gfi_ar_%li_%li" % (short_time, os.getpid())
-        
         try:
             fd = file(fname, "w")
         except:
@@ -871,25 +871,85 @@ class ResourceClassadAdvertiser:
         return fname
 
 
-    def advertiseClassad(self, ad):
+    def classadsToFile(self, ads):
         """
-        Advertise the classad to the pool
+        Write multiple classads to a file and return the filename. 
+        Use only when multi advertise is supported by condor.
         
-        @type type: string 
-        @param type: Name of the classad
+        @type ads: list
+        @param ads: Classad names
+        
+        @rtype: string
+        @return: Filename containing all the classads to advertise
+        """
+        
+        # get a 9 digit number that will stay 9 digit for next 25 years
+        short_time = time.time() - 1.05e9
+        fname = "/tmp/gfi_ar_%li_%li" % (short_time, os.getpid())
+        
+        try:
+            fd = file(fname, "w")
+        except:
+            return ""
+        
+        try:
+            for ad in ads:
+                fd.write('%s' % self.classads[ad])
+                # Append an empty line for advertising multiple classads
+                fd.write(self.multiClassadDelimiter)
+        finally:
+            fd.close()
+        
+        return fname
+
+
+    def doAdvertise(self, fname):
+        """
+        Do the actual advertisement of classad(s) in the file
+
+        @type fname: string
+        @param fname: File name containing classad(s)
         """
 
-        fname = self.classadToFile(ad)
-        if fname != "":
+        if (fname) and (fname != ""):
             try:
-                exe_condor_advertise(fname, self.classads[ad].adAdvertiseCmd,
+                exe_condor_advertise(fname, self.adAdvertiseCmd,
                                      self.pool,
                                      is_multi=self.multiAdvertiseSupport)
             finally:
                 os.remove(fname)
         else:
-            # TODO: Log error/warning that classad file was not generated
-            pass
+            raise RuntimeError, 'Failed advertising %s classads' % self.adType
+
+    def advertiseClassads(self, ads=None):
+        """
+        Advertise multiple classads to the pool
+
+        @type ads: list
+        @param ads: classad names to advertise
+        """
+
+        if (ads == None) or (len(ads) == 0) :
+            return
+
+        if self.multiAdvertiseSupport:
+            fname = self.classadsToFile(ads)
+            self.doAdvertise(fname)
+        else:
+            for ad in ads:
+                self.advertiseClassad(ad)
+
+    
+    def advertiseClassad(self, ad):
+        """
+        Advertise the classad to the pool
+        
+        @type ad: string 
+        @param ad: Name of the classad
+        """
+
+        fname = self.classadToFile(ad)
+        self.doAdvertise(fname)
     
     
     def advertiseAllClassads(self):
@@ -897,8 +957,7 @@ class ResourceClassadAdvertiser:
         Advertise all the known classads to the pool
         """
         
-        for ad in self.classads.keys():
-            self.advertiseClassad(ad)
+        self.advertiseClassads(self.classads.keys())
     
     
     def invalidateClassad(self, ad):
@@ -978,7 +1037,7 @@ class ResourceClassadAdvertiser:
         ads = ""
         
         for ad in self.classads.keys():
-            ads = "%s%s" % (ads, self.classads[ad]) 
+            ads = "%s%s\n" % (ads, self.classads[ad]) 
         return ads
 
 ############################################################

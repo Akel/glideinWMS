@@ -4,7 +4,7 @@
 #   glideinWMS
 #
 # File Version: 
-#   $Id: glideinFrontendElement.py,v 1.52.2.26.2.3 2011/06/14 16:55:15 parag Exp $
+#   $Id: glideinFrontendElement.py,v 1.52.2.26.2.4 2011/06/15 16:28:50 parag Exp $
 #
 # Description:
 #   This is the main of the glideinFrontend
@@ -438,7 +438,7 @@ def iterate_one(client_name,elementDescript,paramsDescript,signatureDescript,x50
     glideid_list.sort() # sort for the sake of monitoring
 
     advertizer=glideinFrontendInterface.MultiAdvertizeWork(descript_obj)
-    resource_advertiser = glideinFrontendInterface.ResourceClassadAdvertiser()
+    resource_advertiser = glideinFrontendInterface.ResourceClassadAdvertiser(multi_support=glideinFrontendInterface.frontendConfig.advertise_use_multi)
     
     log_factory_header()
     total_up_stats_arr=init_factory_stats_arr()
@@ -636,32 +636,6 @@ def iterate_one(client_name,elementDescript,paramsDescript,signatureDescript,x50
                        remove_excess_str=remove_excess_str,
                        key_obj=key_obj,glidein_params_to_encrypt=None,security_name=security_name)
 
-        #glideinFrontendLib.log_files.logActivity("=================")        
-        #glideinFrontendLib.log_files.logActivity("factory_pool_node=%s" % factory_pool_node)
-        #glideinFrontendLib.log_files.logActivity("=================")        
-        #glideinFrontendLib.log_files.logActivity("request_name=%s" % request_name)
-        #glideinFrontendLib.log_files.logActivity("=================")        
-        #glideinFrontendLib.log_files.logActivity("my_identity=%s" % my_identity)
-        #glideinFrontendLib.log_files.logActivity("=================")        
-        #glideinFrontendLib.log_files.logActivity("glideid_str=%s" % glideid_str)
-        #glideinFrontendLib.log_files.logActivity("=================")        
-        #glideinFrontendLib.log_files.logActivity("client_name=%s" % client_name)
-        #glideinFrontendLib.log_files.logActivity("=================")        
-        #glideinFrontendLib.log_files.logActivity("glidein_in_downtime=%s" % glidein_in_downtime)
-        #glideinFrontendLib.log_files.logActivity("=================")        
-        #glideinFrontendLib.log_files.logActivity("glidein_params=%s" % glidein_params)
-        #glideinFrontendLib.log_files.logActivity("=================")        
-        #glideinFrontendLib.log_files.logActivity("glidein_monitors=%s" % glidein_monitors)
-        #glideinFrontendLib.log_files.logActivity("=================")        
-        #glideinFrontendLib.log_files.logActivity("total_up_stats_arr=%s" % total_up_stats_arr)
-        #glideinFrontendLib.log_files.logActivity("=================")        
-        #glideinFrontendLib.log_files.logActivity("total_down_stats_arr=%s" % total_down_stats_arr)
-        #glideinFrontendLib.log_files.logActivity("=================")        
-        #glideinFrontendLib.log_files.logActivity("glidein_el=%s" % glidein_el)
-        #glideinFrontendLib.log_files.logActivity("=================")        
-        #glideinFrontendLib.log_files.logActivity("glidein_el[attr]=%s" % glidein_el['attrs'])
-        #glideinFrontendLib.log_files.logActivity("=================")        
-        #glideinFrontendLib.log_files.logActivity("total_down_stats_arr=%s" % total_down_stats_arr)
         
         # Create the resource classad and populate the required information
         resource_classad = glideinFrontendInterface.ResourceClassad(request_name, client_name)
@@ -696,25 +670,39 @@ def iterate_one(client_name,elementDescript,paramsDescript,signatureDescript,x50
                     0,0)   # requested... none, since not matching
     log_and_sum_factory_line('Unmatched',True,this_stats_arr,total_down_stats_arr)
         
+    # Advertise glideclient classads
     try:
         glideinFrontendLib.log_files.logActivity("Advertizing %i requests"%advertizer.get_queue_len())
         advertizer.do_advertize()
-        glideinFrontendLib.log_files.logActivity(resource_advertiser.getAllClassads())
-        resource_advertiser.advertiseAllClassads()
         glideinFrontendLib.log_files.logActivity("Done advertizing")
     except glideinFrontendInterface.MultiExeError, e:
         glideinFrontendLib.log_files.logWarning("Advertizing failed for %i requests. See debug log for more details."%len(e.arr))
         for ee in e.arr:
             glideinFrontendLib.log_files.logDebug("Advertizing failed: %s"%ee)
-        
     except RuntimeError, e:
-      glideinFrontendLib.log_files.logWarning("Advertizing failed. See debug log for more details.")
-      glideinFrontendLib.log_files.logDebug("Advertizing failed: %s"%e)
+        glideinFrontendLib.log_files.logWarning("Advertizing failed. See debug log for more details.")
+        glideinFrontendLib.log_files.logDebug("Advertizing failed: %s"%e)
     except:
-      glideinFrontendLib.log_files.logWarning("Advertizing failed: Reason unknown")
-      tb = traceback.format_exception(sys.exc_info()[0],sys.exc_info()[1],
+        glideinFrontendLib.log_files.logWarning("Advertizing failed: Reason unknown")
+        tb = traceback.format_exception(sys.exc_info()[0],sys.exc_info()[1],
+                                        sys.exc_info()[2])
+        glideinFrontendLib.log_files.logDebug("Advertizing failed: %s" % tb)
+
+
+    # Advertise glideresource classads
+    try:
+        glideinFrontendLib.log_files.logActivity("Advertising %i glideresource classads to the user pool" %  len(resource_advertiser.classads))
+        glideinFrontendLib.log_files.logActivity("glideresource classads to advertise -\n%s" % resource_advertiser.getAllClassads())
+        resource_advertiser.advertiseAllClassads()
+        glideinFrontendLib.log_files.logActivity("Done advertising glideresource classads")
+    except RuntimeError, e:
+        glideinFrontendLib.log_files.logWarning("Advertising failed. See debug log for more details.")
+        glideinFrontendLib.log_files.logDebug("Advertising failed: %s"%e)
+    except:
+        glideinFrontendLib.log_files.logWarning("Advertising failed: Reason unknown")
+        tb = traceback.format_exception(sys.exc_info()[0],sys.exc_info()[1],
                                       sys.exc_info()[2])
-      glideinFrontendLib.log_files.logDebug("Advertizing failed: %s" % tb)
+        glideinFrontendLib.log_files.logDebug("Advertising failed: %s" % tb)
 
     return
 
